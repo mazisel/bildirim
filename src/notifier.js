@@ -1,5 +1,11 @@
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
+import { WebSocket as WS } from 'ws';
+
+// Node ortamında WebSocket globali yok, Realtime için polyfill gerekir.
+if (!globalThis.WebSocket) {
+  globalThis.WebSocket = WS;
+}
 
 const required = (key) => {
   const value = process.env[key];
