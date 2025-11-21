@@ -39,6 +39,12 @@ npm run start
    ```
    Container loglarında “Telegram bildirimi hazır.” ve “Başlangıç test mesajı gönderildi.” satırlarını görmelisin.
 
+### Docker Compose
+```bash
+docker compose up -d
+```
+`docker-compose.yml` içeriğinde `.env` dosyası otomatik yüklenir, container `unless-stopped` ile yeniden başlatılır.
+
 ## Realtime’i açmayı unutmayın
 - Supabase Dashboard → Database → Replication → `credit_purchases` için Realtime yayını açık olsun.
 - RLS aktifse: ya service role key kullanın, ya da `anon`/`authenticated` için `SELECT` izni veren politika ekleyin; aksi halde Realtime eventleri gelmez.
