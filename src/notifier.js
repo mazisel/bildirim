@@ -45,19 +45,14 @@ let reconnectTimer;
 
 function formatPurchase(row) {
   const lines = [
-    'Yeni kredi satışı (currency != BONUS)',
-    `Kullanıcı: ${row.user_id}`,
+    'Yeni kredi satışı',
     `Kredi: ${row.credits}`,
     `Fiyat: ${row.price} ${row.currency}`,
     row.purchase_type ? `Tip: ${row.purchase_type}` : null,
     row.status ? `Durum: ${row.status}` : null,
-    `ID: ${row.id}`,
     `Tarih: ${row.created_at}`
   ].filter(Boolean);
 
-  if (row.metadata) {
-    lines.push(`Metadata: ${JSON.stringify(row.metadata)}`);
-  }
 
   return lines.join('\n');
 }
