@@ -43,7 +43,13 @@ npm run start
 ```bash
 docker compose up -d
 ```
-`docker-compose.yml` içeriğinde `.env` dosyası otomatik yüklenir, container `unless-stopped` ile yeniden başlatılır.
+`docker-compose.yml` ortam değişkenlerini `environment` ile bekler. `docker compose` komutunu çalıştırdığın terminalde şu env’leri set et veya Portainer Stack ortamında tek tek gir:
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (tercih)
+- `SUPABASE_ANON_KEY` (service yoksa)
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_CHAT_ID`
+Container `unless-stopped` ile yeniden başlatılır.
 
 ## Realtime’i açmayı unutmayın
 - Supabase Dashboard → Database → Replication → `credit_purchases` için Realtime yayını açık olsun.
