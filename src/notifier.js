@@ -25,8 +25,17 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
   );
 }
 
-const supabase = createClient(SUPABASE_URL, supabaseKey);
+const supabase = createClient(SUPABASE_URL, supabaseKey, {
+  realtime: {
+    // Keepalive ayarları: bazı ağlarda idledan dolayı kopmayı azaltır
+    heartbeatIntervalMs: 15_000,
+    inactivityTimeoutMs: 120_000
+  }
+});
 const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+const RECONNECT_DELAY_MS = 5000;
+let channel;
+let reconnectTimer;
 
 function formatPurchase(row) {
   const lines = [
@@ -103,33 +112,53 @@ async function handleInsert(payload) {
 
 function startListener() {
   console.log('Supabase Realtime dinleniyor (INSERT, currency != BONUS filtre kodda)...');
-  const channel = supabase
-    .channel('credit_purchases_telegram')
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'credit_purchases'
-      },
-      handleInsert
-    )
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        console.log('Telegram bildirimi hazır.');
-        sendStartupTest();
-      }
-      if (status === 'CHANNEL_ERROR') {
-        console.error('Supabase Realtime kanal hatası, yeniden başlatın.');
-      }
-      if (status === 'TIMED_OUT') {
-        console.error('Supabase Realtime zaman aşımı, yeniden bağlanmayı deneyin.');
-      }
-    });
+
+  const subscribeChannel = async () => {
+    if (channel) {
+      await supabase.removeChannel(channel);
+    }
+
+    channel = supabase
+      .channel('credit_purchases_telegram')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'credit_purchases'
+        },
+        handleInsert
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Telegram bildirimi hazır.');
+          sendStartupTest();
+        }
+
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.error(
+            `Supabase Realtime bağlantı hatası (${status}), ${RECONNECT_DELAY_MS / 1000} sn sonra yeniden denenecek.`
+          );
+          if (!reconnectTimer) {
+            reconnectTimer = setTimeout(() => {
+              reconnectTimer = null;
+              subscribeChannel();
+            }, RECONNECT_DELAY_MS);
+          }
+        }
+      });
+  };
+
+  subscribeChannel();
 
   const shutdown = async () => {
     console.log('Kapatılıyor, Supabase kanalından çıkılıyor...');
-    await supabase.removeChannel(channel);
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+    }
+    if (channel) {
+      await supabase.removeChannel(channel);
+    }
     process.exit(0);
   };
 
