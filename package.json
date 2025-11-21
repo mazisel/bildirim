@@ -1,0 +1,12 @@
+{
+  "name": "bildirim-notifier",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/notifier.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.3",
+    "dotenv": "^16.4.5"
+  }
+}
